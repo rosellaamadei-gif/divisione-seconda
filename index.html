@@ -1,0 +1,464 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Il Timone – Simulatore della divisione</title>
+<style>
+:root{
+  --coral:#E8705F; --orange:#F2A25C; --teal:#2A9D8F; --sky:#A8D8EA;
+  --cream:#FFF8EC; --ink:#2B3A42; --soft:#F3EBDD; --line:#D9CDB8; --green:#7BC47F;
+  --item:52px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%}
+body{background:var(--cream);color:var(--ink);
+  font-family:"Nunito","Quicksand","Arial Rounded MT Bold","Trebuchet MS",system-ui,sans-serif;
+  font-weight:700;text-transform:uppercase;user-select:none;-webkit-user-select:none;
+  display:flex;flex-direction:column;min-height:100vh}
+button{font:inherit;text-transform:uppercase;color:inherit;cursor:pointer}
+
+header{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:3px solid var(--line);background:#fff;flex-wrap:wrap}
+.logo{font-size:26px;letter-spacing:1px;color:var(--coral);margin-right:8px}
+.logo span{color:var(--teal)}
+.tabs{display:flex;gap:8px;flex:1}
+.tab{border:3px solid var(--line);background:#fff;border-radius:18px;padding:10px 18px;font-size:18px;display:flex;align-items:center;gap:8px}
+.tab.on{border-color:var(--teal);background:#E6F4F2;color:var(--teal)}
+.icon-btn{border:3px solid var(--line);background:#fff;border-radius:16px;width:54px;height:54px;font-size:24px;display:grid;place-items:center}
+
+.guide{display:flex;align-items:center;gap:12px;padding:12px 16px}
+.guide svg{flex:0 0 auto}
+.bubble{position:relative;flex:1;background:#fff;border:3px solid var(--green);border-radius:20px;padding:12px 18px;font-size:22px;line-height:1.3;min-height:56px;display:flex;align-items:center}
+.bubble:before{content:"";position:absolute;left:-14px;top:50%;margin-top:-10px;border:10px solid transparent;border-right:14px solid var(--green);border-left:0}
+.bubble.warn{border-color:var(--orange)} .bubble.warn:before{border-right-color:var(--orange)}
+.bubble.ok{border-color:var(--teal)} .bubble.ok:before{border-right-color:var(--teal)}
+
+main{flex:1;display:grid;grid-template-columns:minmax(220px,34%) 1fr;gap:16px;padding:0 16px 12px}
+@media (max-width:760px){main{grid-template-columns:1fr}}
+.panel{background:#fff;border:3px solid var(--line);border-radius:22px;padding:12px;display:flex;flex-direction:column;min-height:200px}
+.panel h2{margin:0 0 10px;font-size:18px;color:#7a6f60;display:flex;justify-content:space-between;align-items:center}
+.count{background:var(--soft);border-radius:12px;padding:2px 12px;font-size:20px;color:var(--ink)}
+.pile{display:flex;flex-wrap:wrap;gap:8px;align-content:flex-start;flex:1}
+.item{width:var(--item);height:calc(var(--item)*1.0);display:grid;place-items:center}
+.item.card{height:calc(var(--item)*1.35)}
+.item svg{width:100%;height:100%;display:block}
+.item.back{opacity:.95}
+.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.3) translateY(-20px);opacity:0}70%{transform:scale(1.12)}100%{transform:scale(1)}}
+.shake{animation:shake .4s}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-8px)}75%{transform:translateX(8px)}}
+
+.friends{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;align-content:start}
+.friend{border:3px dashed var(--line);border-radius:20px;padding:10px;background:#FFFDF8;display:flex;flex-direction:column;align-items:center;gap:6px;min-height:170px;touch-action:manipulation}
+.friend:active{background:#F1F9F8;border-color:var(--teal)}
+.friend .name{font-size:17px}
+.hand{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;min-height:40px;width:100%}
+.hand .item{--item:calc(var(--itemS))}
+.friend .tot{font-size:16px;color:#7a6f60}
+.friend.hl{border-style:solid;border-color:var(--orange);background:#FFF3E4}
+.numtag{position:relative}
+.numtag b{position:absolute;top:-8px;right:-8px;background:var(--orange);color:#fff;border-radius:50%;width:24px;height:24px;font-size:14px;display:grid;place-items:center}
+
+.bags{display:flex;flex-wrap:wrap;gap:14px;align-content:flex-start}
+.bag{position:relative;border:3px dashed var(--teal);border-radius:14px 14px 30px 30px;padding:24px 10px 12px;background:#F4FBFA;display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-content:center}
+.bag.closed{border-style:solid;background:#E6F4F2}
+.bag .tie{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:13px;background:var(--teal);color:#fff;border-radius:10px;padding:3px 10px;white-space:nowrap}
+.bag.open .tie{background:#fff;color:var(--teal);border:2px dashed var(--teal)}
+.slot{width:var(--itemS);height:var(--itemS);border:2px dashed #9BCFC8;border-radius:50%}
+.bag .num{position:absolute;bottom:-14px;right:-10px;background:var(--teal);color:#fff;border-radius:50%;width:30px;height:30px;display:grid;place-items:center;font-size:16px}
+
+.bottom{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.ask{display:none;background:#fff;border:3px solid var(--orange);border-radius:22px;padding:14px;text-align:center}
+.ask.on{display:block}
+.ask .q{font-size:24px;margin-bottom:12px}
+.choices{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.choice{width:96px;height:96px;border-radius:24px;border:4px solid var(--orange);background:#FFF3E4;font-size:44px}
+.choice.no{opacity:.35}
+.result{display:none;background:#fff;border:3px solid var(--teal);border-radius:22px;padding:16px;text-align:center}
+.result.on{display:block}
+.result .story{font-size:20px;color:#5b6a71;margin-bottom:8px}
+.eq{font-size:56px;letter-spacing:4px}
+.eq .op{color:var(--coral)}
+.eq .r{display:block;font-size:26px;letter-spacing:0;color:var(--orange);margin-top:4px}
+.actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.big{border:none;border-radius:20px;padding:16px 26px;font-size:20px;color:#fff;background:var(--teal);min-width:180px}
+.big.alt{background:#fff;color:var(--ink);border:3px solid var(--line)}
+.big.orange{background:var(--orange)}
+.big:disabled{opacity:.4}
+
+/* pannello insegnante */
+.modal{position:fixed;inset:0;background:rgba(43,58,66,.35);display:none;align-items:center;justify-content:center;padding:16px;z-index:9}
+.modal.on{display:flex}
+.sheet{background:#fff;border-radius:24px;padding:20px 22px;max-width:640px;width:100%;max-height:92vh;overflow:auto;text-transform:none;font-weight:600}
+.sheet h3{margin:0 0 4px;font-size:22px;color:var(--teal);text-transform:uppercase}
+.sheet .note{font-size:14px;color:#5b6a71;line-height:1.45;margin:6px 0 14px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:2px solid var(--soft);flex-wrap:wrap}
+.row label{font-size:16px}
+.stepper{display:flex;align-items:center;gap:8px}
+.stepper button{width:46px;height:46px;border-radius:14px;border:3px solid var(--line);background:#fff;font-size:24px}
+.stepper output{min-width:44px;text-align:center;font-size:24px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{border:3px solid var(--line);background:#fff;border-radius:14px;padding:8px 12px;font-size:14px;text-transform:none}
+.seg button.on{border-color:var(--teal);background:#E6F4F2;color:var(--teal)}
+.sheet .actions{margin-top:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">DIVIDO <span>CON COCCO</span></div>
+  <div class="tabs">
+    <button class="tab on" data-mode="dist" id="tabDist">🃏 DISTRIBUISCO</button>
+    <button class="tab" data-mode="group" id="tabGroup">🛍️ RAGGRUPPO</button>
+  </div>
+  <button class="icon-btn" id="btnSpeak" title="Leggi la consegna" aria-label="Leggi la consegna">🔊</button>
+  <button class="icon-btn" id="btnTeacher" title="Pannello insegnante" aria-label="Pannello insegnante">⚙️</button>
+</header>
+
+<div class="guide">
+  <svg width="74" height="64" viewBox="0 0 74 64" aria-hidden="true">
+    <ellipse cx="34" cy="40" rx="30" ry="20" fill="#7BC47F" stroke="#2B3A42" stroke-width="2.5"/>
+    <path d="M40 34 Q70 30 70 44 Q68 54 40 52 Z" fill="#8FD093" stroke="#2B3A42" stroke-width="2.5"/>
+    <path d="M44 44 L66 44" stroke="#2B3A42" stroke-width="2" stroke-linecap="round"/>
+    <path d="M48 44 l3 4 l3 -4 l3 4 l3 -4" fill="#fff" stroke="#2B3A42" stroke-width="1.5"/>
+    <circle cx="24" cy="20" r="10" fill="#fff" stroke="#2B3A42" stroke-width="2.5"/>
+    <circle cx="42" cy="20" r="10" fill="#fff" stroke="#2B3A42" stroke-width="2.5"/>
+    <circle cx="26" cy="21" r="4" fill="#2B3A42"/><circle cx="44" cy="21" r="4" fill="#2B3A42"/>
+    <circle cx="66" cy="37" r="1.8" fill="#2B3A42"/>
+  </svg>
+  <div class="bubble" id="bubble"></div>
+</div>
+
+<main>
+  <section class="panel" id="leftPanel"></section>
+  <section class="panel" id="rightPanel"></section>
+</main>
+
+<div class="bottom">
+  <div class="ask" id="ask">
+    <div class="q" id="askQ"></div>
+    <div class="choices" id="choices"></div>
+  </div>
+  <div class="result" id="result">
+    <div class="story" id="story"></div>
+    <div class="eq" id="eq"></div>
+  </div>
+  <div class="actions">
+    <button class="big alt" id="btnRound">UN GIRO PER TUTTI</button>
+    <button class="big alt" id="btnReset">↺ RICOMINCIA</button>
+    <button class="big" id="btnNew">NUOVA SFIDA ▶</button>
+  </div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h3>Pannello insegnante</h3>
+    <p class="note"><b>Distribuisco</b> (ripartizione): si conosce il numero delle parti, si cerca quanto tocca a ciascuno. Il bambino tocca un amico per dargli un oggetto; tocca un oggetto in mano a un amico per rimetterlo nel mazzo.<br>
+    <b>Raggruppo</b> (contenenza): si conosce quanti ne vanno in ogni gruppo, si cerca quanti gruppi si formano. Il bambino tocca gli oggetti sul tavolo per metterli nel sacchetto aperto.<br>
+    Alla LIM: impostate qui i numeri del problema che state facendo in classe e premete «Gioca con questi numeri».</p>
+
+    <div class="row"><label>Modalità</label>
+      <div class="seg" id="segMode"><button data-v="dist">Distribuisco</button><button data-v="group">Raggruppo</button></div></div>
+    <div class="row"><label>Oggetti</label>
+      <div class="seg" id="segObj"><button data-v="carte">🃏 Carte</button><button data-v="caramelle">🍬 Caramelle</button><button data-v="mele">🍎 Mele</button><button data-v="biglie">🔵 Biglie</button></div></div>
+    <div class="row"><label>Sfide a caso: livello</label>
+      <div class="seg" id="segLevel"><button data-v="1">Facile (fino a 12)</button><button data-v="2">Medio (fino a 20)</button><button data-v="3">Grande (fino a 30)</button></div></div>
+    <div class="row"><label>Sfide a caso con l'avanzo (resto)</label>
+      <div class="seg" id="segRest"><button data-v="0">No</button><button data-v="1">A volte</button></div></div>
+    <div class="row"><label>Quanti oggetti in tutto</label>
+      <div class="stepper"><button data-s="n" data-d="-1">−</button><output id="outN">12</output><button data-s="n" data-d="1">+</button></div></div>
+    <div class="row"><label id="lblK">Quanti amici</label>
+      <div class="stepper"><button data-s="k" data-d="-1">−</button><output id="outK">3</output><button data-s="k" data-d="1">+</button></div></div>
+
+    <div class="actions">
+      <button class="big alt" id="btnClose">Chiudi (sfide a caso)</button>
+      <button class="big orange" id="btnCustom">Gioca con questi numeri</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+
+/* ---------- impostazioni ---------- */
+var S={mode:"dist",obj:"carte",level:1,rest:0,cn:12,ck:3};
+var OBJ={
+  carte:{one:"CARTA",many:"CARTE",box:"MAZZETTO",boxes:"MAZZETTI",card:true},
+  caramelle:{one:"CARAMELLA",many:"CARAMELLE",box:"SACCHETTO",boxes:"SACCHETTI"},
+  mele:{one:"MELA",many:"MELE",box:"CESTINO",boxes:"CESTINI"},
+  biglie:{one:"BIGLIA",many:"BIGLIE",box:"SACCHETTO",boxes:"SACCHETTI"}
+};
+var FRIENDS=[
+  {name:"MARTY",c:"#2A9D8F",ear:"none"},
+  {name:"SIBILLA",c:"#A89A8A",ear:"round"},
+  {name:"FRANCA",c:"#9AA6B2",ear:"crest"},
+  {name:"TIRESIA",c:"#8C7B6B",ear:"round"},
+  {name:"MIELE",c:"#E0A458",ear:"bear"},
+  {name:"GINO",c:"#E8705F",ear:"cat"}
+];
+
+/* ---------- disegni ---------- */
+function svgItem(type,i){
+  if(type==="carte"){
+    var suit=i%2?'<path d="M20 22 L28 30 L20 38 L12 30 Z" fill="#F2A25C"/>'
+      :'<path d="M20 38 C8 30 10 20 16 21 C18 21 20 24 20 24 C20 24 22 21 24 21 C30 20 32 30 20 38 Z" fill="#E8705F"/>';
+    return '<svg viewBox="0 0 40 56"><rect x="2" y="2" width="36" height="52" rx="6" fill="#fff" stroke="#2B3A42" stroke-width="2.5"/>'+suit+'<circle cx="9" cy="9" r="2.5" fill="'+(i%2?"#F2A25C":"#E8705F")+'"/><circle cx="31" cy="47" r="2.5" fill="'+(i%2?"#F2A25C":"#E8705F")+'"/></svg>';
+  }
+  if(type==="caramelle"){
+    var col=["#E8705F","#2A9D8F","#F2A25C"][i%3];
+    return '<svg viewBox="0 0 40 40"><path d="M4 12 L12 20 L4 28 Z" fill="'+col+'" stroke="#2B3A42" stroke-width="2" stroke-linejoin="round"/><path d="M36 12 L28 20 L36 28 Z" fill="'+col+'" stroke="#2B3A42" stroke-width="2" stroke-linejoin="round"/><ellipse cx="20" cy="20" rx="10" ry="9" fill="'+col+'" stroke="#2B3A42" stroke-width="2"/><path d="M15 16 Q20 13 25 16" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+  }
+  if(type==="mele"){
+    return '<svg viewBox="0 0 40 40"><path d="M20 12 C10 6 3 14 6 25 C9 35 16 37 20 34 C24 37 31 35 34 25 C37 14 30 6 20 12 Z" fill="#E8705F" stroke="#2B3A42" stroke-width="2"/><path d="M20 12 L21 5" stroke="#2B3A42" stroke-width="2.5" stroke-linecap="round"/><path d="M21 7 C25 2 31 4 31 6 C27 9 24 9 21 7 Z" fill="#7BC47F" stroke="#2B3A42" stroke-width="1.5"/><path d="M11 18 Q12 15 15 14" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg>';
+  }
+  var bc=["#2A9D8F","#A8D8EA","#F2A25C","#E8705F"][i%4];
+  return '<svg viewBox="0 0 40 40"><circle cx="20" cy="20" r="15" fill="'+bc+'" stroke="#2B3A42" stroke-width="2"/><circle cx="14" cy="14" r="4" fill="#fff" opacity=".85"/></svg>';
+}
+function svgFriend(f){
+  var ears="";
+  if(f.ear==="round") ears='<circle cx="14" cy="16" r="7" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2"/><circle cx="46" cy="16" r="7" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2"/>';
+  if(f.ear==="bear") ears='<circle cx="14" cy="14" r="8" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2"/><circle cx="46" cy="14" r="8" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2"/>';
+  if(f.ear==="cat") ears='<path d="M10 22 L12 4 L24 14 Z" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2" stroke-linejoin="round"/><path d="M50 22 L48 4 L36 14 Z" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2" stroke-linejoin="round"/>';
+  if(f.ear==="crest") ears='<path d="M26 10 Q30 0 34 10" fill="#E8705F" stroke="#2B3A42" stroke-width="2"/>';
+  var beak=f.ear==="none"||f.ear==="crest"
+    ?'<path d="M24 36 L36 36 L30 46 Z" fill="#F2A25C" stroke="#2B3A42" stroke-width="2" stroke-linejoin="round"/>'
+    :'<path d="M23 38 Q30 45 37 38" stroke="#2B3A42" stroke-width="2.5" fill="none" stroke-linecap="round"/><ellipse cx="30" cy="34" rx="3.5" ry="2.5" fill="#2B3A42"/>';
+  return '<svg viewBox="0 0 60 60" width="58" height="58">'+ears+'<circle cx="30" cy="32" r="22" fill="'+f.c+'" stroke="#2B3A42" stroke-width="2.5"/><circle cx="30" cy="38" r="12" fill="#FFF8EC" opacity=".6"/><circle cx="22" cy="27" r="3.5" fill="#2B3A42"/><circle cx="38" cy="27" r="3.5" fill="#2B3A42"/>'+beak+'</svg>';
+}
+
+/* ---------- stato ---------- */
+var G=null, lastAdd=null;
+function rnd(a,b){return a+Math.floor(Math.random()*(b-a+1))}
+function shuffle(a){for(var i=a.length-1;i>0;i--){var j=Math.floor(Math.random()*(i+1));var t=a[i];a[i]=a[j];a[j]=t}return a}
+
+function pickNumbers(){
+  var maxN=[0,12,20,30][S.level], k, q, r=0, tries=0;
+  do{
+    k = S.level===1 ? rnd(2,3) : rnd(2,S.level===2?5:6);
+    q = rnd(2, S.level===1?4:(S.level===2?5:6));
+    r = (S.rest && Math.random()<.5) ? rnd(1,k-1) : 0;
+    tries++;
+  }while((k*q+r>maxN || (G && G.n===k*q+r && G.k===k)) && tries<60);
+  return {n:k*q+r,k:k};
+}
+
+function start(nums){
+  var n=nums.n,k=nums.k;
+  if(S.mode==="dist"){
+    G={mode:"dist",n:n,k:k,pile:n,hands:Array(k).fill(0),phase:"play",order:shuffle(FRIENDS.slice()).slice(0,k)};
+  }else{
+    G={mode:"group",n:n,k:k,table:n,bags:[0],phase:"play"};
+  }
+  lastAdd=null;
+  $("ask").classList.remove("on"); $("result").classList.remove("on");
+  intro(); render();
+}
+function intro(){
+  var o=OBJ[S.obj];
+  if(G.mode==="dist") say("DIVIDI "+G.n+" "+o.many+" TRA "+G.k+" AMICI IN PARTI UGUALI. TOCCA UN AMICO PER DARGLI UNA "+o.one+".");
+  else say("METTI "+G.k+" "+o.many+" IN OGNI "+o.box+". TOCCA LE "+o.many+" SUL TAVOLO.");
+}
+function say(t,kind){var b=$("bubble");b.textContent=t;b.className="bubble"+(kind?" "+kind:"")}
+
+/* ---------- disegno della scena ---------- */
+function sizeFor(n){return n<=12?56:(n<=20?46:38)}
+function render(){
+  var o=OBJ[S.obj], L=$("leftPanel"), R=$("rightPanel");
+  var size=sizeFor(G.n); document.documentElement.style.setProperty("--item",size+"px");
+  var sm=Math.max(26,Math.round(size*0.62)); document.documentElement.style.setProperty("--itemS",sm+"px");
+  var cls="item"+(o.card?" card":"");
+  var h="";
+  if(G.mode==="dist"){
+    h='<h2>'+(o.card?"IL MAZZO":"DA DIVIDERE")+' <span class="count">'+G.pile+'</span></h2><div class="pile" id="pile">';
+    for(var i=0;i<G.pile;i++) h+='<div class="'+cls+'">'+svgItem(S.obj,i)+'</div>';
+    h+='</div>'; L.innerHTML=h;
+
+    h='<h2>GLI AMICI <span class="count">'+G.k+'</span></h2><div class="friends">';
+    for(var f=0;f<G.k;f++){
+      h+='<div class="friend" data-f="'+f+'">'+svgFriend(G.order[f])+'<div class="name">'+G.order[f].name+'</div><div class="hand">';
+      for(var c=0;c<G.hands[f];c++){
+        var isNew=lastAdd&&lastAdd.f===f&&lastAdd.i===c;
+        h+='<div class="'+cls+(isNew?" pop":"")+(G.showCount===f?" numtag":"")+'" data-back="'+f+'" style="--item:'+sm+'px">'+svgItem(S.obj,c)+(G.showCount===f?'<b>'+(c+1)+'</b>':'')+'</div>';
+      }
+      h+='</div></div>';
+    }
+    h+='</div>'; R.innerHTML=h;
+    $("btnRound").style.display="";
+    $("btnRound").disabled=G.phase!=="play"||G.pile<G.k;
+  }else{
+    h='<h2>SUL TAVOLO <span class="count">'+G.table+'</span></h2><div class="pile">';
+    for(var t=0;t<G.table;t++) h+='<div class="'+cls+'" data-take="1">'+svgItem(S.obj,t)+'</div>';
+    h+='</div>'; L.innerHTML=h;
+
+    var closed=G.bags.filter(function(b){return b===G.k}).length;
+    h='<h2>'+o.boxes+' PIENI <span class="count">'+closed+'</span></h2><div class="bags">';
+    var cols=Math.min(G.k,3);
+    G.bags.forEach(function(b,bi){
+      var isClosed=b===G.k;
+      h+='<div class="bag '+(isClosed?"closed":"open")+'" style="width:'+(cols*(sm+5)+26)+'px">';
+      h+='<span class="tie">'+(isClosed?"✔ PIENO":o.box+" APERTO")+'</span>';
+      for(var s=0;s<G.k;s++){
+        if(s<b){
+          var isNew=lastAdd&&lastAdd.b===bi&&lastAdd.i===s;
+          h+='<div class="'+cls+(isNew?" pop":"")+'" style="--item:'+sm+'px" '+(isClosed?"":'data-ret="'+bi+'"')+'>'+svgItem(S.obj,s)+'</div>';
+        } else h+='<div class="slot"></div>';
+      }
+      if(isClosed) h+='<span class="num">'+(bi+1)+'</span>';
+      h+='</div>';
+    });
+    h+='</div>'; R.innerHTML=h;
+    $("btnRound").style.display="none";
+  }
+}
+
+/* ---------- azioni ---------- */
+document.addEventListener("click",function(e){
+  if(!G||G.phase!=="play") return;
+  var back=e.target.closest("[data-back]");
+  if(back&&G.mode==="dist"){ var f=+back.dataset.back; G.hands[f]--; G.pile++; lastAdd=null; G.showCount=null; render(); checkDist(); return; }
+  var fr=e.target.closest(".friend");
+  if(fr&&G.mode==="dist"){
+    var fi=+fr.dataset.f;
+    if(G.pile===0){ say("IL MAZZO È FINITO!","warn"); return; }
+    G.pile--; G.hands[fi]++; lastAdd={f:fi,i:G.hands[fi]-1}; render(); checkDist(); return;
+  }
+  if(e.target.closest("#pile")&&G.mode==="dist"){ say("TOCCA UN AMICO PER DARGLI UNA "+OBJ[S.obj].one+"!","warn"); return; }
+  var take=e.target.closest("[data-take]");
+  if(take&&G.mode==="group"){
+    var bi=G.bags.length-1;
+    G.bags[bi]++; G.table--; lastAdd={b:bi,i:G.bags[bi]-1};
+    if(G.bags[bi]===G.k && G.table>=G.k){ G.bags.push(0); }
+    render(); checkGroup(); return;
+  }
+  var ret=e.target.closest("[data-ret]");
+  if(ret&&G.mode==="group"){
+    var b2=+ret.dataset.ret; G.bags[b2]--; G.table++; lastAdd=null; render(); checkGroup(); return;
+  }
+});
+
+$("btnRound").onclick=function(){
+  if(!G||G.mode!=="dist"||G.phase!=="play"||G.pile<G.k) return;
+  for(var f=0;f<G.k;f++){G.hands[f]++;G.pile--;}
+  lastAdd=null; render(); checkDist();
+};
+
+function checkDist(){
+  var o=OBJ[S.obj], mx=Math.max.apply(null,G.hands), mn=Math.min.apply(null,G.hands);
+  var need=G.hands.reduce(function(s,h){return s+(mx-h)},0);
+  if(mx===mn && G.pile<G.k){
+    if(G.pile>0) say("BRAVO! NE "+(G.pile===1?"AVANZA 1":"AVANZANO "+G.pile)+": NON BASTANO PER DARNE UNA A TUTTI.","ok");
+    else say("BRAVO! HAI DIVISO TUTTE LE "+o.many+" IN PARTI UGUALI.","ok");
+    ask(); return;
+  }
+  if(G.pile<need){
+    say("NON È GIUSTO: QUALCUNO HA PIÙ "+o.many+". TOCCA UNA "+o.one+" PER RIMETTERLA NEL MAZZO.","warn"); return;
+  }
+  if(G.hands.every(function(h){return h===0})) intro();
+  else if(mx!==mn) say("CONTINUA… OGNI AMICO DEVE AVERE LO STESSO NUMERO DI "+o.many+".");
+  else say("OGNUNO NE HA "+mx+". CONTINUA A DISTRIBUIRE!");
+}
+function checkGroup(){
+  var o=OBJ[S.obj], last=G.bags[G.bags.length-1];
+  var openPartial=last>0&&last<G.k;
+  if(!openPartial && last===G.k && G.table<G.k){
+    if(G.table>0) say("BRAVO! "+(G.table===1?"AVANZA 1 "+o.one:"AVANZANO "+G.table+" "+o.many)+": NON BASTANO PER UN ALTRO "+o.box+".","ok");
+    else say("BRAVO! NON È AVANZATO NIENTE.","ok");
+    ask(); return;
+  }
+  if(G.table===G.n) intro();
+  else if(last===0) say("IL "+o.box+" È PIENO! ECCONE UN ALTRO VUOTO.");
+  else say("NEL "+o.box+" CE NE SONO "+last+". NE SERVONO "+G.k+".");
+}
+
+/* ---------- domanda finale ---------- */
+function ask(){
+  G.phase="ask"; var o=OBJ[S.obj];
+  var q=Math.floor(G.n/G.k), r=G.n%G.k, ans=q, distr;
+  if(G.mode==="dist"){ $("askQ").textContent="QUANTE "+o.many+" HA OGNI AMICO?"; distr=G.k; }
+  else { $("askQ").textContent="QUANTI "+o.boxes+" HAI RIEMPITO?"; distr=G.k; }
+  var set=[ans]; [ans+1,ans-1,distr,G.n].forEach(function(v){ if(set.length<3&&v>0&&set.indexOf(v)<0&&v!==G.n) set.push(v); });
+  if(set.length<3) set.push(ans+2);
+  shuffle(set);
+  var c=$("choices"); c.innerHTML="";
+  set.forEach(function(v){
+    var b=document.createElement("button"); b.className="choice"; b.textContent=v;
+    b.onclick=function(){
+      if(G.phase!=="ask"||b.classList.contains("no")) return;
+      if(v===ans) done(q,r);
+      else{
+        b.classList.add("shake","no");
+        if(G.mode==="dist"){ G.showCount=0; G.phase="play-lock"; render(); G.phase="ask"; say("CONTA LE "+o.many+" DI "+G.order[0].name+"!","warn"); }
+        else say("CONTA I "+o.boxes+" CON IL NASTRO VERDE!","warn");
+      }
+    };
+    c.appendChild(b);
+  });
+  $("ask").classList.add("on");
+  $("btnRound").disabled=true;
+}
+function done(q,r){
+  G.phase="done"; var o=OBJ[S.obj];
+  $("ask").classList.remove("on");
+  var story = G.mode==="dist"
+    ? G.n+" "+o.many+" DIVISE TRA "+G.k+" AMICI: "+q+" "+(q===1?o.one:o.many)+" A TESTA"
+    : G.n+" "+o.many+", "+G.k+" IN OGNI "+o.box+": "+q+" "+(q===1?o.box:o.boxes);
+  $("story").textContent=story;
+  $("eq").innerHTML=G.n+' <span class="op">:</span> '+G.k+' <span class="op">=</span> '+q+
+    (r?'<span class="r">'+(r===1?"AVANZA 1":"AVANZANO "+r)+'</span>':'');
+  $("result").classList.add("on");
+  say("ESATTO! ECCO LA DIVISIONE.","ok");
+}
+
+/* ---------- pulsanti ---------- */
+$("btnNew").onclick=function(){start(pickNumbers())};
+$("btnReset").onclick=function(){start({n:G.n,k:G.k})};
+function setMode(m){
+  S.mode=m;
+  $("tabDist").classList.toggle("on",m==="dist"); $("tabGroup").classList.toggle("on",m==="group");
+  syncPanel();
+}
+$("tabDist").onclick=function(){setMode("dist");start(pickNumbers())};
+$("tabGroup").onclick=function(){setMode("group");start(pickNumbers())};
+
+$("btnSpeak").onclick=function(){
+  try{
+    var u=new SpeechSynthesisUtterance($("bubble").textContent.toLowerCase());
+    u.lang="it-IT"; u.rate=.9; speechSynthesis.cancel(); speechSynthesis.speak(u);
+  }catch(err){}
+};
+
+/* ---------- pannello insegnante ---------- */
+function segBind(id,key,num,cb){
+  $(id).onclick=function(e){var b=e.target.closest("button");if(!b)return;S[key]=num?+b.dataset.v:b.dataset.v;syncPanel();if(cb)cb();};
+}
+segBind("segMode","mode",false,function(){setMode(S.mode)});
+segBind("segObj","obj",false);
+segBind("segLevel","level",true);
+segBind("segRest","rest",true);
+document.querySelectorAll(".stepper button").forEach(function(b){
+  b.onclick=function(){
+    if(b.dataset.s==="n") S.cn=Math.max(2,Math.min(30,S.cn+ +b.dataset.d));
+    else S.ck=Math.max(2,Math.min(6,S.ck+ +b.dataset.d));
+    syncPanel();
+  };
+});
+function syncPanel(){
+  [["segMode",S.mode],["segObj",S.obj],["segLevel",String(S.level)],["segRest",String(S.rest)]].forEach(function(p){
+    $(p[0]).querySelectorAll("button").forEach(function(b){b.classList.toggle("on",b.dataset.v===p[1])});
+  });
+  $("outN").textContent=S.cn; $("outK").textContent=S.ck;
+  $("lblK").textContent=S.mode==="dist"?"Quanti amici":"Quanti in ogni "+OBJ[S.obj].box.toLowerCase();
+}
+$("btnTeacher").onclick=function(){syncPanel();$("modal").classList.add("on")};
+$("btnClose").onclick=function(){$("modal").classList.remove("on");start(pickNumbers())};
+$("btnCustom").onclick=function(){$("modal").classList.remove("on");start({n:Math.max(S.cn,S.ck),k:S.ck})};
+$("modal").onclick=function(e){if(e.target===this){this.classList.remove("on")}};
+
+syncPanel();
+start({n:12,k:3});
+})();
+</script>
+</body>
+</html>
